@@ -18,19 +18,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if($result->num_rows === 1){
 
         $user = $result->fetch_assoc();
-
+    
         if($password === $user['password']){
-
+    
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
-
+    
+            // Redirect based on role
             if($user['role'] === 'admin'){
                 header("Location: ../app/admin/dashboard.php");
-            }else{
+            } elseif($user['role'] === 'manager'){
+                header("Location: ../app/manager/dashboard.php");
+            } else {
                 header("Location: ../app/user/dashboard.php");
             }
             exit();
+        } else {
+            $error = "Invalid password.";
+        }
+    } else {
+        $error = "User not found.";
+    }
 
         }else{
             $message = "Invalid email or password.";
