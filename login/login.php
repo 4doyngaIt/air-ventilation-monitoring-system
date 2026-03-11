@@ -2,51 +2,45 @@
 session_start();
 include "../config/db.php";
 
-$message = "";
+$error = "";
 
-// Handle login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $email = $_POST['email'];
     $password = $_POST['password'];
 
     $stmt = $conn->prepare("SELECT user_id, username, password, role FROM users WHERE email = ?");
-    $stmt->bind_param("s",$email);
+    $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    if($result->num_rows === 1){
+    if ($result->num_rows === 1) {
 
         $user = $result->fetch_assoc();
-    
-        if($password === $user['password']){
-    
+
+        if ($password === $user['password']) {
+
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
-    
+
             // Redirect based on role
-            if($user['role'] === 'admin'){
+            if ($user['role'] === 'admin') {
                 header("Location: ../app/admin/dashboard.php");
-            } elseif($user['role'] === 'manager'){
+            } elseif ($user['role'] === 'manager') {
                 header("Location: ../app/manager/dashboard.php");
             } else {
                 header("Location: ../app/user/dashboard.php");
             }
+
             exit();
+
         } else {
             $error = "Invalid password.";
         }
+
     } else {
         $error = "User not found.";
-    }
-
-        }else{
-            $message = "Invalid email or password.";
-        }
-
-    }else{
-        $message = "Invalid email or password.";
     }
 
 }
