@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "db.php";
+include "../db.php"; // correct path to db.php
 
 $message = "";
 
@@ -23,12 +23,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
 
-            // Redirect based on role (admin or user)
+            // Redirect based on role
             if ($user['role'] === 'admin') {
-                header("Location: admin_dashboard.php");
+                header("Location: ../app/admin/dashboard.php");
                 exit();
             } else {
-                header("Location: user_dashboard.php");
+                header("Location: ../app/user/dashboard.php");
                 exit();
             }
         } else {
