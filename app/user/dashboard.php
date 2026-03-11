@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "db.php"; // your database connection
+include "../config/db.php"; // your database connection
 
 // Redirect to login if not logged in
 if(!isset($_SESSION['user_id'])){

@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "../db.php"; // Adjust path to your db.php
+include "../config/db.php"; // Adjust path to your db.php
 
 // Check if user is logged in and is admin
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin'){

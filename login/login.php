@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "../db.php"; // correct path to db.php
+include "../config/db.php"; // correct path to db.php
 
 $message = "";
 
