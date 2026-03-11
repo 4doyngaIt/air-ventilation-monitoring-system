@@ -1,9 +1,11 @@
 <?php
 session_start();
-include "../config/db.php"; // correct path to db.php
+include "../config/db.php"; // correct path to your DB
 
+// Initialize message variable
 $message = "";
 
+// Handle login form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
@@ -16,8 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
-        // Verify password
-        if (password_verify($password, $user['password'])) {
+
+        // Compare passwords (plain text)
+        if ($password === $user['password']) {
             // Successful login
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['username'] = $user['username'];
@@ -39,24 +42,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>Login - Air Ventilation System</title>
     <style>
-        body { font-family: Arial; background: #f4f6f9; display:flex; justify-content:center; align-items:center; height:100vh; }
+        body { font-family: Arial; background: #f4f6f9; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
         .container { background:#fff; padding:30px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.2); width:350px; }
+        h2 { text-align:center; margin-bottom:20px; }
         input { width:100%; padding:10px; margin:10px 0; border:1px solid #ccc; border-radius:5px; }
         button { width:100%; padding:10px; background:#0077cc; color:#fff; border:none; border-radius:5px; cursor:pointer; }
         button:hover { background:#005fa3; }
-        .message { color:red; text-align:center; }
+        .message { color:red; text-align:center; margin-bottom:10px; }
     </style>
 </head>
 <body>
 <div class="container">
     <h2>Login</h2>
-    <?php if($message) echo "<div class='message'>$message</div>"; ?>
+    <?php if(!empty($message)) echo "<div class='message'>$message</div>"; ?>
     <form method="POST">
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Password" required>

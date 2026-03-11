@@ -1,12 +1,10 @@
 <?php
-$host = "localhost";
-$db_name = "air_ventilation_system";
-$username = "root";        
-$password = "";            
+$servername = "localhost";
+$username = "root";
+$password = ""; 
+$dbname = "air_ventilation_system";
 
-$conn = new mysqli($host, $username, $password, $db_name);
-
-
+$conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }

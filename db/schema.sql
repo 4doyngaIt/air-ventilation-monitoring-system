@@ -59,9 +59,9 @@ CREATE TABLE IF NOT EXISTS ventilation_logs (
 
 -- Users
 INSERT INTO users (username, email, password, role) VALUES
-('admin','admin@example.com','$2y$10$examplehashed','admin'),
-('john_doe','john@example.com','$2y$10$examplehashed','user'),
-('jane_smith','jane@example.com','$2y$10$examplehashed','manager');
+('admin', 'admin@gmail.com', 'admin123', 'admin'),
+('john_doe', 'john@gmail.com', '123456', 'user'),
+('jane_smith', 'jane@gmail.com', 'pass123', 'manager');
 
 -- Sensors (with sample lat/lng coordinates)
 INSERT INTO sensors (location, latitude, longitude, status) VALUES

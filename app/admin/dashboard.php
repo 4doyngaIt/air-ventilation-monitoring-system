@@ -1,10 +1,10 @@
 <?php
 session_start();
-include "../config/db.php"; // Adjust path to your db.php
+include __DIR__ . "/../../config/db.php"; // Correct path to DB
 
-// Check if user is logged in and is admin
+// Redirect to login if not logged in or not admin
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin'){
-    header("Location: ../user/login.php");
+    header("Location: ../../login/login.php");
     exit();
 }
 
@@ -22,7 +22,7 @@ if(isset($_POST['edit_user'])){
     if($stmt->execute()){
         $message = "User updated successfully!";
     } else {
-        $message = "Failed to update user!";
+        $message = "Failed to update user.";
     }
 }
 
@@ -34,31 +34,16 @@ if(isset($_GET['delete_user'])){
     if($stmt->execute()){
         $message = "User deleted successfully!";
     } else {
-        $message = "Failed to delete user!";
+        $message = "Failed to delete user.";
     }
 }
 
-// ── Fetch Users from DB ────────────────────────────
-$users = [];
-$result = $conn->query("SELECT user_id, username, email, role FROM users");
-while($row = $result->fetch_assoc()){
-    $users[] = $row;
-}
+// ── Fetch Users ─────────────────────────────
+$users_result = $conn->query("SELECT * FROM users ORDER BY user_id ASC");
 
-// ── Fetch Sensors from DB ──────────────────────────
-$sensors = [];
-$sql = "SELECT s.sensor_id, s.location, s.status, r.temperature, r.humidity, r.created_at 
-        FROM sensors s 
-        LEFT JOIN sensor_readings r ON s.sensor_id = r.sensor_id
-        AND r.created_at = (SELECT MAX(created_at) FROM sensor_readings WHERE sensor_id = s.sensor_id)
-        ORDER BY s.sensor_id ASC";
-$result = $conn->query($sql);
-while($row = $result->fetch_assoc()){
-    $row['temperature'] = isset($row['temperature']) ? $row['temperature'] . '°C' : 'N/A';
-    $row['humidity'] = isset($row['humidity']) ? $row['humidity'] . '%' : 'N/A';
-    $row['last_updated'] = isset($row['created_at']) ? $row['created_at'] : 'N/A';
-    $sensors[] = $row;
-}
+// ── Fetch Sensors ─────────────────────────────
+$sensors_result = $conn->query("SELECT * FROM sensors ORDER BY sensor_id ASC");
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -103,7 +88,7 @@ window.onload = function(){ showSection('home'); };
     <a href="#" onclick="showSection('home')">HOME</a>
     <a href="#" onclick="showSection('sensor')">Monitor Sensor</a>
     <a href="#" onclick="showSection('users')">Manage Users</a>
-    <a href="../user/logout.php">Logout</a>
+    <a href="../../login/logout.php">Logout</a>
 </div>
 
 <div class="main">
@@ -111,8 +96,8 @@ window.onload = function(){ showSection('home'); };
     <!-- HOME Section -->
     <div id="home" class="section">
         <h2>Welcome, Admin!</h2>
-        <p>Total Sensors Installed: <strong><?= count($sensors) ?></strong></p>
-        <p>Number of Users: <strong><?= count($users) ?></strong></p>
+        <p>Total Sensors Installed: <strong><?= $sensors_result->num_rows ?></strong></p>
+        <p>Number of Users: <strong><?= $users_result->num_rows ?></strong></p>
     </div>
 
     <!-- Monitor Sensor Section -->
@@ -127,7 +112,7 @@ window.onload = function(){ showSection('home'); };
                 <th>Humidity</th>
                 <th>Last Updated</th>
             </tr>
-            <?php foreach($sensors as $sensor): ?>
+            <?php while($sensor = $sensors_result->fetch_assoc()): ?>
             <tr>
                 <td><?= $sensor['sensor_id'] ?></td>
                 <td><?= htmlspecialchars($sensor['location']) ?></td>
@@ -136,7 +121,7 @@ window.onload = function(){ showSection('home'); };
                 <td><?= $sensor['humidity'] ?></td>
                 <td><?= $sensor['last_updated'] ?></td>
             </tr>
-            <?php endforeach; ?>
+            <?php endwhile; ?>
         </table>
     </div>
 
@@ -145,9 +130,10 @@ window.onload = function(){ showSection('home'); };
         <h2>User Management</h2>
         <?php if($message) echo "<div class='message'>$message</div>"; ?>
 
+        <!-- Users Table -->
         <table>
             <tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Actions</th></tr>
-            <?php foreach($users as $user): ?>
+            <?php while($user = $users_result->fetch_assoc()): ?>
             <tr>
                 <td><?= $user['user_id'] ?></td>
                 <td><?= htmlspecialchars($user['username']) ?></td>
@@ -158,26 +144,26 @@ window.onload = function(){ showSection('home'); };
                     <a href="?delete_user=<?= $user['user_id'] ?>" onclick="return confirm('Delete this user?');"><button class="delete-btn">Delete</button></a>
                 </td>
             </tr>
-            <?php endforeach; ?>
+            <!-- Edit User Form -->
+            <tr>
+                <td colspan="5">
+                    <form method="POST" id="edit-form-<?= $user['user_id'] ?>" style="display:none;">
+                        <input type="hidden" name="id" value="<?= $user['user_id'] ?>">
+                        <input type="text" name="username" value="<?= htmlspecialchars($user['username']) ?>" required>
+                        <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" required>
+                        <select name="role" required>
+                            <option value="user" <?= $user['role']=='user'?'selected':'' ?>>User</option>
+                            <option value="manager" <?= $user['role']=='manager'?'selected':'' ?>>Manager</option>
+                            <option value="admin" <?= $user['role']=='admin'?'selected':'' ?>>Admin</option>
+                        </select>
+                        <input type="submit" name="edit_user" value="Save Changes">
+                    </form>
+                </td>
+            </tr>
+            <?php endwhile; ?>
         </table>
-
-        <?php foreach($users as $user): ?>
-        <form method="POST" id="edit-form-<?= $user['user_id'] ?>" style="display:none;">
-            <h3>Edit User: <?= htmlspecialchars($user['username']) ?></h3>
-            <input type="hidden" name="id" value="<?= $user['user_id'] ?>">
-            <input type="text" name="username" value="<?= htmlspecialchars($user['username']) ?>" required>
-            <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" required>
-            <select name="role" required>
-                <option value="user" <?= $user['role']=='user'?'selected':'' ?>>User</option>
-                <option value="manager" <?= $user['role']=='manager'?'selected':'' ?>>Manager</option>
-                <option value="admin" <?= $user['role']=='admin'?'selected':'' ?>>Admin</option>
-            </select>
-            <input type="submit" name="edit_user" value="Save Changes">
-        </form>
-        <?php endforeach; ?>
     </div>
 
 </div>
-
 </body>
 </html>
