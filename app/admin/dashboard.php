@@ -256,7 +256,7 @@ showSection('home');
 <a href="#" onclick="showSection('home')">HOME</a>
 <a href="#" onclick="showSection('sensor')">Monitor Sensor</a>
 <a href="#" onclick="showSection('users')">Manage Users</a>
-<a href="../../login/logout.php">Logout</a>
+<a href="../../login/login.php">Logout</a>
 </div>
 
 <div class="main">

@@ -1,4 +1,3 @@
-```php
 <?php
 session_start();
 include "../config/db.php";
@@ -162,4 +161,3 @@ pass.type = "password";
 
 </body>
 </html>
-```
