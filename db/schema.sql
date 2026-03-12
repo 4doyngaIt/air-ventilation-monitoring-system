@@ -1,81 +1,237 @@
---  Create Database
-CREATE DATABASE IF NOT EXISTS air_ventilation_system;
+<?php
+session_start();
+include __DIR__ . "/../../config/db.php";
 
-USE air_ventilation_system;
+if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'manager'){
+    header("Location: ../../login/login.php");
+    exit();
+}
 
---  Users Table
-CREATE TABLE IF NOT EXISTS users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('user','manager','admin') NOT NULL DEFAULT 'user',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+/* FETCH DATA */
+$users_result = $conn->query("SELECT user_id,username,email,role FROM users ORDER BY user_id ASC");
+$sensors_result = $conn->query("SELECT * FROM sensors ORDER BY sensor_id ASC");
 
---  Sensors Table 
+$total_users = $users_result->num_rows;
+$total_sensors = $sensors_result->num_rows;
+?>
 
-CREATE TABLE IF NOT EXISTS sensors (
-    sensor_id INT AUTO_INCREMENT PRIMARY KEY,
-    location VARCHAR(100) NOT NULL,
-    latitude DECIMAL(9,6) NOT NULL,
-    longitude DECIMAL(9,6) NOT NULL,
-    status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+<!DOCTYPE html>
+<html>
+<head>
+<title>Manager Dashboard</title>
 
--- Sensor Readings Table
-CREATE TABLE IF NOT EXISTS sensor_readings (
-    reading_id INT AUTO_INCREMENT PRIMARY KEY,
-    sensor_id INT NOT NULL,
-    temperature FLOAT NOT NULL,
-    humidity FLOAT NOT NULL,
-    is_raining BOOLEAN NOT NULL,
-    vent_state ENUM('on','off') NOT NULL,
-    mode ENUM('automatic','manual') NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sensor_id) REFERENCES sensors(sensor_id) ON DELETE CASCADE
-);
+<style>
+body{
+    font-family:Arial;
+    margin:0;
+    display:flex;
+    background:#f4f7f9;
+}
 
---  Ventilation Control Logs Table
-CREATE TABLE IF NOT EXISTS ventilation_logs (
-    log_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    sensor_id INT NOT NULL,
-    action ENUM('on','off') NOT NULL,
-    mode ENUM('manual') NOT NULL DEFAULT 'manual',
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (sensor_id) REFERENCES sensors(sensor_id) ON DELETE CASCADE
-);
+/* SIDEBAR MATCH ADMIN STYLE */
+.sidebar{
+    width:180px;
+    background:#0077cc;
+    color:#fff;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding-top:20px;
+}
 
+.sidebar a{
+    color:#fff;
+    padding:15px 20px;
+    text-decoration:none;
+    display:block;
+    font-weight:bold;
+}
 
+.sidebar a:hover{
+    background:#005fa3;
+}
 
---  Sample Insertions
+/* MAIN */
+.main{
+    flex:1;
+    padding:25px;
+}
 
+h2{
+    color:#0077cc;
+}
 
+/* DASHBOARD CARDS */
+.cards{
+    display:flex;
+    gap:20px;
+    margin-top:20px;
+}
 
--- Users
-INSERT INTO users (username, email, password, role) VALUES
-('admin', 'admin@gmail.com', 'admin123', 'admin'),
-('john_doe', 'john@gmail.com', '123456', 'user'),
-('jane_smith', 'jane@gmail.com', 'pass123', 'manager');
+.card{
+    flex:1;
+    background:white;
+    padding:20px;
+    border-radius:8px;
+    box-shadow:0 0 10px #ccc;
+    text-align:center;
+}
 
--- Sensors (with sample lat/lng coordinates)
-INSERT INTO sensors (location, latitude, longitude, status) VALUES
-('Alae', 14.599512, 120.984222, 'Active'),
-('Damilag', 14.600100, 120.985500, 'Active'),
-('Tankulan', 14.599900, 120.983800, 'Active');
+.card span{
+    font-size:35px;
+    display:block;
+    margin-bottom:10px;
+}
 
--- Sensor Readings
-INSERT INTO sensor_readings (sensor_id, temperature, humidity, is_raining, vent_state, mode) VALUES
-(1, 24.0, 55.0, 0, 'off','automatic'),
-(2, 22.0, 50.0, 0, 'off','automatic'),
-(3, 32.0, 60.0, 1, 'off','automatic');
+/* MAP */
+#map{
+    width:100%;
+    height:400px;
+    margin-top:20px;
+    border-radius:10px;
+}
 
--- Ventilation Logs (Manual Actions)
-INSERT INTO ventilation_logs (user_id, sensor_id, action) VALUES
-(1, 1, 'on'),
-(2, 2, 'off');
+/* TABLE */
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    background:white;
+    box-shadow:0 0 8px #ccc;
+}
+
+th,td{
+    padding:10px;
+    border:1px solid #ddd;
+    text-align:center;
+}
+
+th{
+    background:#0077cc;
+    color:white;
+}
+
+.section{
+    display:none;
+}
+</style>
+
+<script>
+function showSection(id){
+    let sections = document.querySelectorAll('.section');
+    sections.forEach(s => s.style.display='none');
+    document.getElementById(id).style.display='block';
+}
+
+window.onload = function(){
+    showSection('home');
+}
+
+/* GOOGLE MAP */
+function initMap(){
+    var location = {lat:7.0731, lng:125.6128}; // example coordinates
+    var map = new google.maps.Map(document.getElementById("map"),{
+        zoom:13,
+        center:location
+    });
+
+    var marker = new google.maps.Marker({
+        position:location,
+        map:map,
+        title:"Sensor Location"
+    });
+}
+</script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+    <a href="#" onclick="showSection('home')">Dashboard</a>
+    <a href="#" onclick="showSection('mapSection')">Sensor Map</a>
+    <a href="#" onclick="showSection('sensor')">Monitor Sensors</a>
+    <a href="#" onclick="showSection('users')">View Users</a>
+    <a href="../../login/login.php">Logout</a> <!-- same style as other links -->
+</div>
+
+<div class="main">
+
+<!-- HOME -->
+<div id="home" class="section">
+    <h2>Welcome Manager, <?php echo $_SESSION['username']; ?></h2>
+    <div class="cards">
+        <div class="card">
+            <span>📡</span>
+            <h3>Total Sensors</h3>
+            <p><?php echo $total_sensors; ?></p>
+        </div>
+        <div class="card">
+            <span>👥</span>
+            <h3>Total Users</h3>
+            <p><?php echo $total_users; ?></p>
+        </div>
+    </div>
+</div>
+
+<!-- MAP -->
+<div id="mapSection" class="section">
+    <h2>Sensor Location Map</h2>
+    <div id="map"></div>
+</div>
+
+<!-- SENSOR MONITORING -->
+<div id="sensor" class="section">
+    <h2>Sensor Monitoring</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Sun Heat</th>
+            <th>Rain</th>
+            <th>Last Updated</th>
+        </tr>
+        <?php while($sensor=$sensors_result->fetch_assoc()): ?>
+        <tr>
+            <td><?php echo $sensor['sensor_id']; ?></td>
+            <td><?php echo htmlspecialchars($sensor['location']); ?></td>
+            <td><?php echo htmlspecialchars($sensor['status']); ?></td>
+            <td><?php echo (isset($sensor['sun_heat']) && $sensor['sun_heat']=="yes") ? "☀ Detected" : "❌ None"; ?></td>
+            <td><?php echo (isset($sensor['rain']) && $sensor['rain']=="yes") ? "🌧 Detected" : "❌ None"; ?></td>
+            <td><?php echo isset($sensor['last_updated']) ? $sensor['last_updated'] : "N/A"; ?></td>
+        </tr>
+        <?php endwhile; ?>
+    </table>
+</div>
+
+<!-- USERS -->
+<div id="users" class="section">
+    <h2>System Users</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+        </tr>
+        <?php while($u=$users_result->fetch_assoc()): ?>
+        <tr>
+            <td><?php echo $u['user_id']; ?></td>
+            <td><?php echo htmlspecialchars($u['username']); ?></td>
+            <td><?php echo htmlspecialchars($u['email']); ?></td>
+            <td><?php echo $u['role']; ?></td>
+        </tr>
+        <?php endwhile; ?>
+    </table>
+</div>
+
+</div>
+
+<!-- GOOGLE MAP SCRIPT -->
+<script async
+src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
+</script>
+
+</body>
+</html>
