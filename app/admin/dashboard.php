@@ -219,27 +219,14 @@ margin-right:8px;
 <script>
 
 function showSection(id){
-
 let sections=document.querySelectorAll('.section');
-
-sections.forEach(s=>{
-s.style.display='none';
-});
-
+sections.forEach(s=>{ s.style.display='none'; });
 document.getElementById(id).style.display='block';
-
 }
 
 function showEditForm(id){
-
 let form=document.getElementById("edit-form-"+id);
-
-if(form.style.display==="none"){
-form.style.display="block";
-}else{
-form.style.display="none";
-}
-
+form.style.display = (form.style.display==="none") ? "block" : "none";
 }
 
 window.onload=function(){
@@ -285,7 +272,7 @@ showSection('home');
 
 </div>
 
-<!-- SENSOR -->
+<!-- SENSOR MONITOR -->
 
 <div id="sensor" class="section">
 
@@ -297,20 +284,47 @@ showSection('home');
 <th>ID</th>
 <th>Location</th>
 <th>Status</th>
-<th>Temperature</th>
-<th>Humidity</th>
+<th>Sun Heat</th>
+<th>Rain</th>
 <th>Last Updated</th>
 </tr>
 
 <?php while($sensor=$sensors_result->fetch_assoc()): ?>
 
 <tr>
+
 <td><?php echo $sensor['sensor_id']; ?></td>
+
 <td><?php echo htmlspecialchars($sensor['location']); ?></td>
-<td><?php echo $sensor['status']; ?></td>
-<td><?php echo $sensor['temperature']; ?></td>
-<td><?php echo $sensor['humidity']; ?></td>
-<td><?php echo $sensor['last_updated']; ?></td>
+
+<td><?php echo htmlspecialchars($sensor['status']); ?></td>
+
+<td>
+<?php
+if(isset($sensor['sun_heat']) && $sensor['sun_heat']=="yes"){
+echo "☀ Detected";
+}else{
+echo "❌ None";
+}
+?>
+</td>
+
+<td>
+<?php
+if(isset($sensor['rain']) && $sensor['rain']=="yes"){
+echo "🌧 Detected";
+}else{
+echo "❌ None";
+}
+?>
+</td>
+
+<td>
+<?php
+echo isset($sensor['last_updated']) ? $sensor['last_updated'] : "N/A";
+?>
+</td>
+
 </tr>
 
 <?php endwhile; ?>
