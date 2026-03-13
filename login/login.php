@@ -6,42 +6,41 @@ $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+$email = $_POST['email'];
+$password = $_POST['password'];
 
-    $stmt = $conn->prepare("SELECT user_id, username, password, role FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
+$stmt = $conn->prepare("SELECT user_id, username, password, role FROM users WHERE email = ?");
+$stmt->bind_param("s",$email);
+$stmt->execute();
+$result = $stmt->get_result();
 
-    if ($result->num_rows === 1) {
+if($result->num_rows === 1){
 
-        $user = $result->fetch_assoc();
+$user = $result->fetch_assoc();
 
-        if ($password === $user['password']) {
+if($password === $user['password']){
 
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['role'] = $user['role'];
+$_SESSION['user_id'] = $user['user_id'];
+$_SESSION['username'] = $user['username'];
+$_SESSION['role'] = $user['role'];
 
-            // Redirect based on role
-            if ($user['role'] === 'admin') {
-                header("Location: ../app/admin/dashboard.php");
-            } elseif ($user['role'] === 'manager') {
-                header("Location: ../app/manager/dashboard.php");
-            } else {
-                header("Location: ../app/user/dashboard.php");
-            }
+if ($user['role'] === 'admin') {
+header("Location: ../app/admin/dashboard.php");
+} elseif ($user['role'] === 'manager') {
+header("Location: ../app/manager/dashboard.php");
+} else {
+header("Location: ../app/user/dashboard.php");
+}
 
-            exit();
+exit();
 
-        } else {
-            $error = "Invalid password.";
-        }
+}else{
+$error = "Invalid password";
+}
 
-    } else {
-        $error = "User not found.";
-    }
+}else{
+$error = "User not found";
+}
 
 }
 ?>
@@ -49,71 +48,119 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html>
 <head>
-<title>Login - Air Ventilation System</title>
+
+<title>Air Ventilation Monitoring System</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
 
-body{
-font-family: Arial;
+*{
 margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
 height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-
-/* GRADIENT BACKGROUND */
-background: linear-gradient(135deg,#667eea,#764ba2);
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
 }
 
-/* LOGIN CARD */
+/* CARD */
 
-.container{
-background:white;
-padding:35px;
-width:350px;
-border-radius:12px;
-box-shadow:0 15px 35px rgba(0,0,0,0.2);
-}
-
-h2{
+.card{
+width:380px;
+padding:40px;
+background:rgba(255,255,255,0.08);
+border-radius:20px;
+backdrop-filter:blur(20px);
+box-shadow:0 20px 40px rgba(0,0,0,0.4);
 text-align:center;
-margin-bottom:20px;
-color:#333;
+color:white;
+}
+
+/* LOGO */
+
+.logo img{
+width:70px;
+height:70px;
+margin-bottom:10px;
+}
+
+/* TITLE */
+
+h1{
+font-size:32px;
+font-weight:600;
+margin-bottom:5px;
+}
+
+.subtitle{
+font-size:14px;
+opacity:0.7;
+margin-bottom:30px;
+}
+
+/* INPUT */
+
+.input-group{
+margin-bottom:15px;
 }
 
 input{
 width:100%;
-padding:12px;
-margin:10px 0;
-border:1px solid #77adeb;
-border-radius:6px;
+padding:14px;
+border:none;
+border-radius:10px;
+background:rgba(255,255,255,0.12);
+color:white;
 font-size:14px;
 }
+
+input::placeholder{
+color:#ccc;
+}
+
+/* SHOW PASSWORD */
+
+.show-pass{
+font-size:13px;
+margin-top:5px;
+display:flex;
+align-items:center;
+gap:5px;
+color:#ccc;
+}
+
+/* BUTTON */
 
 button{
 width:100%;
-padding:12px;
+padding:14px;
+margin-top:15px;
 border:none;
-border-radius:6px;
-background:#667eea;
+border-radius:12px;
+background:linear-gradient(90deg,#00c6ff,#0072ff);
 color:white;
-font-size:15px;
+font-size:16px;
 cursor:pointer;
+transition:0.3s;
 }
 
 button:hover{
-background:#5563c1;
+transform:scale(1.03);
 }
 
-.message{
-color:red;
-text-align:center;
+/* ERROR */
+
+.error{
+color:#ff7b7b;
 margin-bottom:10px;
-}
-
-.showpass{
 font-size:14px;
-margin-bottom:10px;
 }
 
 </style>
@@ -122,25 +169,33 @@ margin-bottom:10px;
 
 <body>
 
-<div class="container">
+<div class="card">
 
-<h2>Air Ventilation Login</h2>
+<div class="logo">
+<img src="../images/logo.png" alt="AirVent Logo">
+</div>
 
-<?php if(!empty($message)) echo "<div class='message'>$message</div>"; ?>
+<h1>Air Ventilation Monitoring System</h1>
+<div class="subtitle">Air Ventilation Monitoring System</div>
+
+<?php if(!empty($error)) echo "<div class='error'>$error</div>"; ?>
 
 <form method="POST">
 
-<input type="email" name="email" placeholder="Email Address" required>
-
-<input type="password" name="password" id="password" placeholder="Password" required>
-
-<div class="showpass">
-<label>
-<input type="checkbox" onclick="togglePassword()"> Show Password
-</label>
+<div class="input-group">
+<input type="email" name="email" placeholder="Enter username or email" required>
 </div>
 
-<button type="submit">Login</button>
+<div class="input-group">
+<input type="password" id="password" name="password" placeholder="Enter password" required>
+
+<div class="show-pass">
+<input type="checkbox" onclick="togglePassword()"> Show Password
+</div>
+
+</div>
+
+<button type="submit">Log In →</button>
 
 </form>
 
