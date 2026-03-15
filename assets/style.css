@@ -1,0 +1,156 @@
+/* --- General Reset --- */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body{
+    display:flex;
+    background:#ffffff;   /* changed to white */
+    color:#1e293b;        /* dark text for readability */
+    height:100vh;
+    overflow:hidden;
+}
+
+/* --- SIDEBAR --- */
+.sidebar{
+    width:260px;
+    height:100%;
+    background:#0f1b2e;
+    padding:25px;
+    display:flex;
+    flex-direction:column;
+}
+
+.logo{
+    font-size:24px;
+    font-weight:bold;
+    margin-bottom:40px;
+    color:#22c55e;
+}
+
+.sidebar a{
+    color:#cbd5e1;
+    text-decoration:none;
+    padding:14px;
+    border-radius:8px;
+    margin-bottom:12px;
+    display:block;
+    transition:0.3s;
+}
+
+.sidebar a:hover{
+    background:#1e293b;
+}
+
+/* --- MAIN --- */
+.main{
+    flex:1;
+    padding:30px;
+    overflow-y:auto;
+}
+
+/* --- CARDS --- */
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:20px;
+    margin-bottom:30px;
+}
+
+.card{
+    background:#ffffff; /* white card */
+    padding:25px;
+    border-radius:14px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.card:hover{
+    transform: translateY(-5px);
+}
+
+.card h1{
+    font-size:28px;
+    margin-top:12px;
+}
+
+/* --- SENSOR GRID --- */
+.sensor-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:20px;
+}
+
+/* --- Sensor Cards --- */
+.sensor{
+    background:#ffffff;
+    padding:20px;
+    border-radius:16px;
+    box-shadow:0 6px 15px rgba(0,0,0,0.1);
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.sensor:hover{
+    transform: translateY(-5px);
+    box-shadow:0 10px 20px rgba(0,0,0,0.15);
+}
+
+.sensor-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:15px;
+}
+
+.sensor-header h3{
+    font-size:18px;
+    font-weight:bold;
+    color:#16a34a;
+}
+
+.sensor-status{
+    font-size:14px;
+    font-weight:bold;
+    padding:4px 8px;
+    border-radius:6px;
+    color:white;
+}
+
+.status-on{background:#22c55e;}
+.status-off{background:#ef4444;}
+.status-auto{background:#f59e0b;}
+
+.sensor-body p{
+    margin-bottom:6px;
+    font-size:14px;
+}
+
+.sensor-body p span{
+    font-weight:bold;
+    color:#475569;
+}
+
+/* --- BUTTONS --- */
+.btn{
+    padding:8px 14px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    margin-right:8px;
+    margin-top:10px;
+    transition:0.2s;
+}
+
+.btn:hover{
+    opacity:0.85;
+}
+
+.on{background:#22c55e;color:white;}
+.off{background:#ef4444;color:white;}
+.auto{background:#f59e0b;color:black;}
