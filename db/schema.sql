@@ -89,9 +89,9 @@ INSERT INTO users (username, email, password, role) VALUES
 
 -- SENSORS (with coordinates for Leaflet map)
 INSERT INTO sensors (location, latitude, longitude, status) VALUES
-('sensor 1', 14.599512, 120.984222, 'Active'),
-('sensor 2', 14.600100, 120.985500, 'Active'),
-('sensor 3', 14.599900, 120.983800, 'Active');
+('balay ni tonyo', 14.599512, 120.984222, 'Active'),
+('balay ni tonyo', 14.600100, 120.985500, 'Active'),
+('balay ni tonyo', 14.599900, 120.983800, 'Active');
 
 
 -- SENSOR READINGS (Weather examples)
@@ -100,8 +100,8 @@ INSERT INTO sensor_readings
 VALUES
 
 (1, 34.5, 45, 0, 3.2, 900, 'sunny', 'on', 'automatic'),
-(2, 26.0, 80, 5.5, 4.1, 200, 'rainy', 'off', 'automatic'),
-(3, 29.0, 65, 0, 6.5, 400, 'cloudy', 'off', 'automatic');
+(2, 26.0, 80, 0, 4.1, 900, 'sunny', 'off', 'automatic'),
+(3, 29.0, 65, 0, 6.5, 900, 'sunny', 'off', 'automatic');
 
 
 -- VENTILATION CONTROL LOGS
