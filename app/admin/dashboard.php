@@ -1,412 +1,196 @@
 <?php
-session_start();
-include __DIR__ . "/../../config/db.php";
+$page_title = 'Dashboard';
+include 'header.php';
 
-if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin'){
-    header("Location: ../../login/login.php");
-    exit();
+// System stats
+$total_users = $conn->query("SELECT COUNT(*) FROM users")->fetch_row()[0];
+$total_sensors = $conn->query("SELECT COUNT(*) FROM sensors")->fetch_row()[0];
+$active_sensors = $conn->query("SELECT COUNT(*) FROM sensors WHERE status='Active'")->fetch_row()[0];
+$inactive_sensors = $conn->query("SELECT COUNT(*) FROM sensors WHERE status='Inactive'")->fetch_row()[0];
+$maintenance_sensors = $conn->query("SELECT COUNT(*) FROM sensors WHERE status='maintenance'")->fetch_row()[0];
+
+$vents_on_result = $conn->query("
+    SELECT COUNT(DISTINCT sr.sensor_id) as vent_count
+    FROM sensor_readings sr
+    INNER JOIN (
+        SELECT sensor_id, MAX(created_at) as max_date
+        FROM sensor_readings
+        GROUP BY sensor_id
+    ) latest ON sr.sensor_id = latest.sensor_id AND sr.created_at = latest.max_date
+    WHERE sr.vent_state = 'on'
+");
+$vents_on = $vents_on_result->fetch_row()[0];
+
+// System activity for chart
+$system_history = [];
+$activity_logs_result = $conn->query("SHOW TABLES LIKE 'activity_logs'");
+if($activity_logs_result->num_rows > 0) {
+    $sys_result = $conn->query("
+        SELECT DATE_FORMAT(created_at, '%H:00') as hour, COUNT(*) as actions
+        FROM activity_logs
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        GROUP BY hour ORDER BY created_at ASC
+    ");
+    while($row = $sys_result->fetch_assoc()) $system_history[] = $row;
 }
 
-$message = "";
+// Calculate sensors with rain
+$rain_sensors = $conn->query("
+    SELECT COUNT(DISTINCT sr.sensor_id) as rain_count
+    FROM sensor_readings sr
+    INNER JOIN (
+        SELECT sensor_id, MAX(created_at) as max_date
+        FROM sensor_readings
+        GROUP BY sensor_id
+    ) latest ON sr.sensor_id = latest.sensor_id AND sr.created_at = latest.max_date
+    WHERE sr.rainfall > 0
+")->fetch_row()[0];
 
-/* EDIT USER */
-if(isset($_POST['edit_user'])){
-    $id = $_POST['id'];
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $role = $_POST['role'];
-
-    $stmt = $conn->prepare("UPDATE users SET username=?, email=?, role=? WHERE user_id=?");
-    $stmt->bind_param("sssi",$username,$email,$role,$id);
-
-    if($stmt->execute()){
-        $message = "User updated successfully!";
-    }else{
-        $message = "Failed to update user.";
-    }
-}
-
-/* DELETE USER */
-if(isset($_GET['delete_user'])){
-    $id = $_GET['delete_user'];
-
-    $stmt = $conn->prepare("DELETE FROM users WHERE user_id=?");
-    $stmt->bind_param("i",$id);
-
-    if($stmt->execute()){
-        $message = "User deleted successfully!";
-    }else{
-        $message = "Failed to delete user.";
-    }
-}
-
-/* FETCH USERS */
-$users_result = $conn->query("SELECT * FROM users ORDER BY user_id ASC");
-
-/* FETCH SENSORS */
-$sensors_result = $conn->query("SELECT * FROM sensors ORDER BY sensor_id ASC");
-
-$total_users = $users_result->num_rows;
-$total_sensors = $sensors_result->num_rows;
+// Average temperature
+$avg_temp = $conn->query("
+    SELECT AVG(temperature) as avg_temp
+    FROM sensor_readings sr
+    INNER JOIN (
+        SELECT sensor_id, MAX(created_at) as max_date
+        FROM sensor_readings
+        GROUP BY sensor_id
+    ) latest ON sr.sensor_id = latest.sensor_id AND sr.created_at = latest.max_date
+")->fetch_assoc()['avg_temp'] ?? 0;
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-<title>Admin Dashboard</title>
+<?php if(isset($_GET['msg'])): ?>
+<div class="alert alert-<?php echo $_GET['type'] ?? 'success'; ?>">
+    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($_GET['msg']); ?>
+</div>
+<?php endif; ?>
 
-<style>
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Active Sensors</div>
+        <div class="stat-value"><?php echo $active_sensors; ?></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Sensors Running</div>
+        <div class="stat-value"><?php echo $vents_on; ?></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Avg Temperature</div>
+        <div class="stat-value"><?php echo number_format($avg_temp, 1); ?>°C</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Sensors with Rain</div>
+        <div class="stat-value"><?php echo $rain_sensors; ?></div>
+    </div>
+</div>
 
-body{
-font-family:Arial;
-margin:0;
-display:flex;
-background:#f4f7f9;
-}
-
-/* SIDEBAR */
-
-.sidebar{
-width:180px;
-background:#0077cc;
-color:#fff;
-height:100vh;
-display:flex;
-flex-direction:column;
-padding-top:20px;
-}
-
-.sidebar a{
-color:#fff;
-padding:15px 20px;
-text-decoration:none;
-display:block;
-font-weight:bold;
-}
-
-.sidebar a:hover{
-background:#005fa3;
-}
-
-/* MAIN */
-
-.main{
-flex:1;
-padding:25px;
-}
-
-h2{
-color:#0077cc;
-}
-
-/* DASHBOARD CARDS */
-
-.cards{
-display:flex;
-gap:20px;
-margin-top:20px;
-}
-
-.card{
-flex:1;
-background:#fff;
-padding:20px;
-border-radius:8px;
-box-shadow:0 0 10px #ccc;
-text-align:center;
-}
-
-.card-icon{
-font-size:35px;
-display:block;
-margin-bottom:10px;
-}
-
-.card h3{
-margin:0;
-color:#555;
-}
-
-.card p{
-font-size:28px;
-font-weight:bold;
-margin-top:10px;
-}
-
-/* TABLE */
-
-table{
-width:100%;
-border-collapse:collapse;
-margin-top:20px;
-background:#fff;
-box-shadow:0 0 8px #ccc;
-}
-
-th,td{
-border:1px solid #ddd;
-padding:10px;
-text-align:center;
-}
-
-th{
-background:#0077cc;
-color:#fff;
-}
-
-/* BUTTONS */
-
-button{
-padding:6px 12px;
-border:none;
-border-radius:4px;
-cursor:pointer;
-}
-
-.edit-btn{
-background:#17a2b8;
-color:#fff;
-}
-
-.delete-btn{
-background:#dc3545;
-color:#fff;
-}
-
-/* FORM */
-
-form{
-background:#fff;
-padding:15px;
-margin-top:10px;
-border-radius:6px;
-box-shadow:0 0 8px #ccc;
-}
-
-input,select{
-width:100%;
-padding:8px;
-margin:5px 0 10px 0;
-border:1px solid #ccc;
-border-radius:4px;
-}
-
-input[type=submit]{
-background:#0077cc;
-color:white;
-border:none;
-cursor:pointer;
-}
-
-.section{
-display:none;
-}
-
-.message{
-background:#d4edda;
-padding:10px;
-border-radius:5px;
-margin-bottom:10px;
-}
-
-.icon{
-font-size:20px;
-margin-right:8px;
-}
-
-</style>
+<!-- Charts -->
+<div class="charts-grid">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-chart-pie" style="color: var(--primary);"></i>
+                Sensor Status Distribution
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="sensorStatusPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-chart-bar" style="color: var(--primary);"></i>
+                System Activity (24 Hours)
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="systemChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
+// Pie Chart
+new Chart(document.getElementById('sensorStatusPieChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Active', 'Inactive', 'Maintenance'],
+        datasets: [{
+            data: [<?php echo "$active_sensors, $inactive_sensors, $maintenance_sensors"; ?>],
+            backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+            borderColor: ['#ffffff', '#ffffff', '#ffffff'],
+            borderWidth: 2,
+            hoverOffset: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { 
+                position: 'bottom', 
+                labels: { padding: 20, usePointStyle: true } 
+            }
+        },
+        cutout: '60%'
+    }
+});
 
-function showSection(id){
-let sections=document.querySelectorAll('.section');
-sections.forEach(s=>{ s.style.display='none'; });
-document.getElementById(id).style.display='block';
-}
-
-function showEditForm(id){
-let form=document.getElementById("edit-form-"+id);
-form.style.display = (form.style.display==="none") ? "block" : "none";
-}
-
-window.onload=function(){
-showSection('home');
-}
-
+// Bar Chart
+<?php if(!empty($system_history)): ?>
+new Chart(document.getElementById('systemChart'), {
+    type: 'bar',
+    data: {
+        labels: <?php echo json_encode(array_column($system_history, 'hour')); ?>,
+        datasets: [{
+            label: 'Admin Actions',
+            data: <?php echo json_encode(array_column($system_history, 'actions')); ?>,
+            backgroundColor: '#10b981',
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+<?php else: ?>
+new Chart(document.getElementById('systemChart'), {
+    type: 'bar',
+    data: {
+        labels: ['No Data'],
+        datasets: [{
+            label: 'Admin Actions',
+            data: [0],
+            backgroundColor: '#e2e8f0',
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+            legend: { display: false },
+            title: { display: true, text: 'No activity in the last 24 hours' }
+        },
+        scales: { 
+            y: { beginAtZero: true, max: 1 }, 
+            x: { grid: { display: false } } 
+        }
+    }
+});
+<?php endif; ?>
 </script>
 
-</head>
-
-<body>
-
-<div class="sidebar">
-<a href="#" onclick="showSection('home')">HOME</a>
-<a href="#" onclick="showSection('sensor')">Monitor Sensor</a>
-<a href="#" onclick="showSection('users')">Manage Users</a>
-<a href="../../login/login.php">Logout</a>
-</div>
-
-<div class="main">
-
-<!-- HOME -->
-
-<div id="home" class="section">
-
-<h2>Welcome, Admin!</h2>
-
-<div class="cards">
-
-<div class="card">
-<span class="card-icon">📡</span>
-<h3>Total Sensors Installed</h3>
-<p><?php echo $total_sensors; ?></p>
-</div>
-
-<div class="card">
-<span class="card-icon">👥</span>
-<h3>Number of Users</h3>
-<p><?php echo $total_users; ?></p>
-</div>
-
-</div>
-
-</div>
-
-<!-- SENSOR MONITOR -->
-
-<div id="sensor" class="section">
-
-<h2><span class="icon">📡</span>Sensor Monitoring</h2>
-
-<table>
-
-<tr>
-<th>ID</th>
-<th>Location</th>
-<th>Status</th>
-<th>Sun Heat</th>
-<th>Rain</th>
-<th>Last Updated</th>
-</tr>
-
-<?php while($sensor=$sensors_result->fetch_assoc()): ?>
-
-<tr>
-
-<td><?php echo $sensor['sensor_id']; ?></td>
-
-<td><?php echo htmlspecialchars($sensor['location']); ?></td>
-
-<td><?php echo htmlspecialchars($sensor['status']); ?></td>
-
-<td>
-<?php
-if(isset($sensor['sun_heat']) && $sensor['sun_heat']=="yes"){
-echo "☀ Detected";
-}else{
-echo "❌ None";
-}
-?>
-</td>
-
-<td>
-<?php
-if(isset($sensor['rain']) && $sensor['rain']=="yes"){
-echo "🌧 Detected";
-}else{
-echo "❌ None";
-}
-?>
-</td>
-
-<td>
-<?php
-echo isset($sensor['last_updated']) ? $sensor['last_updated'] : "N/A";
-?>
-</td>
-
-</tr>
-
-<?php endwhile; ?>
-
-</table>
-
-</div>
-
-<!-- USERS -->
-
-<div id="users" class="section">
-
-<h2><span class="icon">👤</span>User Management</h2>
-
-<?php if($message){ ?>
-<div class="message"><?php echo $message; ?></div>
-<?php } ?>
-
-<table>
-
-<tr>
-<th>ID</th>
-<th>Username</th>
-<th>Email</th>
-<th>Role</th>
-<th>Actions</th>
-</tr>
-
-<?php while($user=$users_result->fetch_assoc()): ?>
-
-<tr>
-
-<td><?php echo $user['user_id']; ?></td>
-<td><?php echo htmlspecialchars($user['username']); ?></td>
-<td><?php echo htmlspecialchars($user['email']); ?></td>
-<td><?php echo $user['role']; ?></td>
-
-<td>
-
-<button class="edit-btn" onclick="showEditForm(<?php echo $user['user_id']; ?>)">Edit</button>
-
-<a href="?delete_user=<?php echo $user['user_id']; ?>" onclick="return confirm('Delete this user?');">
-<button class="delete-btn">Delete</button>
-</a>
-
-</td>
-
-</tr>
-
-<tr>
-<td colspan="5">
-
-<form method="POST" id="edit-form-<?php echo $user['user_id']; ?>" style="display:none;">
-
-<input type="hidden" name="id" value="<?php echo $user['user_id']; ?>">
-
-<input type="text" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" required>
-
-<input type="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-
-<select name="role">
-
-<option value="user" <?php if($user['role']=="user") echo "selected"; ?>>User</option>
-<option value="manager" <?php if($user['role']=="manager") echo "selected"; ?>>Manager</option>
-<option value="admin" <?php if($user['role']=="admin") echo "selected"; ?>>Admin</option>
-
-</select>
-
-<input type="submit" name="edit_user" value="Save Changes">
-
-</form>
-
-</td>
-</tr>
-
-<?php endwhile; ?>
-
-</table>
-
-</div>
-
-</div>
-
-</body>
-</html>
+<?php include 'footer.php'; ?>
