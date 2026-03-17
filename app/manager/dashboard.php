@@ -73,23 +73,21 @@ if($has_last_updated) {
 }
 
 body {
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f3f4f6;
     min-height: 100vh;
     display: flex;
-    color: #2d3748;
+    color: #1f2937;
 }
 
-/* Glassmorphism Sidebar */
+/* Dark Sidebar - Matching Image Design */
 .sidebar {
     width: 260px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
+    background: #1e293b;
     height: 100vh;
     display: flex;
     flex-direction: column;
-    padding: 30px 0;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+    padding: 0;
     position: fixed;
     left: 0;
     top: 0;
@@ -97,43 +95,58 @@ body {
 }
 
 .sidebar-brand {
-    padding: 0 30px 30px;
-    border-bottom: 1px solid #e2e8f0;
-    margin-bottom: 20px;
+    padding: 24px 24px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar-brand i {
+    font-size: 1.5rem;
+    color: #10b981;
 }
 
 .sidebar-brand h2 {
-    color: #4c51bf;
-    font-size: 1.5rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    color: #10b981;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 0 12px;
 }
 
 .sidebar a {
-    color: #4a5568;
-    padding: 16px 30px;
+    color: #94a3b8;
+    padding: 14px 16px;
     text-decoration: none;
     display: flex;
     align-items: center;
     gap: 12px;
     font-weight: 500;
-    transition: all 0.3s ease;
-    margin: 4px 12px;
-    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    margin: 4px 0;
+    border-radius: 8px;
+    border-left: 3px solid transparent;
 }
 
-.sidebar a:hover, .sidebar a.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    transform: translateX(5px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+.sidebar a:hover {
+    background: rgba(255,255,255,0.05);
+    color: #e2e8f0;
+}
+
+.sidebar a.active {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border-left-color: #10b981;
 }
 
 .sidebar a i {
-    font-size: 1.2rem;
-    width: 24px;
+    font-size: 1.1rem;
+    width: 20px;
     text-align: center;
 }
 
