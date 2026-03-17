@@ -89,9 +89,9 @@ INSERT INTO users (username, email, password, role) VALUES
 
 -- SENSORS (with coordinates for Leaflet map)
 INSERT INTO sensors (location, latitude, longitude, status) VALUES
-('balay ni tonyo', 14.599512, 120.984222, 'Active'),
-('balay ni tonyo', 14.600100, 120.985500, 'Active'),
-('balay ni tonyo', 14.599900, 120.983800, 'Active');
+('balay ni tonyo', 8.314000, 125.041000, 'Active'),   -- main spot
+('balay ni tonyo', 8.314010, 125.041010, 'Active'),   -- slightly northeast
+('balay ni tonyo', 8.313990, 125.041010, 'Active');   -- slightly southeast
 
 
 -- SENSOR READINGS (Weather examples)
