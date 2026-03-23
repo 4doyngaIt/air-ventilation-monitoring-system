@@ -22,7 +22,7 @@ $sensors = $conn->query("SELECT * FROM sensors");
 
 <script>
 async function controlVent(sensor_id,action,mode){
-    const res = await fetch("../../api/sensor_control.php",{
+    const res = await fetch("../../app/sensor_control.php",{
         method:"POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({sensor_id,action,mode})

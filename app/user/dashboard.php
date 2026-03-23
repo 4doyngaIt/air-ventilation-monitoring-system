@@ -60,7 +60,7 @@ include "header.php";
 let allSensors = []; // Store all sensors for filtering
 
 async function loadDashboard(){
-    const res = await fetch("../../api/sensor_data.php?action=sensors");
+    const res = await fetch("../../app/sensor_data.php?action=sensors");
     allSensors = await res.json(); // Store globally
 
     updateDashboard(allSensors);

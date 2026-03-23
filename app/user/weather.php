@@ -8,7 +8,7 @@ include "header.php";
 
 <script>
 async function loadWeather(){
-    const res = await fetch("../../api/sensor_data.php?action=sensors");
+    const res = await fetch("../../app/sensor_data.php?action=sensors");
     const sensors = await res.json();
     let html = "";
 
