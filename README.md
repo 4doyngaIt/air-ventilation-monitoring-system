@@ -15,16 +15,7 @@ The **AirVent Monitoring System** is a web-based farm ventilation management pla
 
 ---
 
-## 🌐 Deployment Info
 
-| Field | Value |
-|-------|-------|
-| Live URL | `https://ics-dev.io/hangin` |
-| Hosting | Hostinger Shared Hosting |
-| FTP Host | `ftp.ics-dev.io` |
-| FTP User | `u442411629.hangin` |
-| FTP Pass | `9O\4qo]t'{9+` |
-| FTP Port | `21` |
 
 ### How Files Are Served
 This FTP account maps directly to `https://ics-dev.io/hangin/` — files uploaded to the FTP root `/` are served at that URL. **Do NOT put files inside `public_html/`** — upload directly to the root `/`.
